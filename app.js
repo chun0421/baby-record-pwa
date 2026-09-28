@@ -32,7 +32,7 @@
   async function openPicker(){try{if(!state.token)return connectGoogle();setBusy(true);await waitFor(()=>window.gapi);await new Promise((resolve,reject)=>gapi.load("picker",{callback:resolve,onerror:reject,timeout:10000,ontimeout:()=>reject(new Error("檔案選擇器載入逾時"))}));const view=new google.picker.DocsView(google.picker.ViewId.SPREADSHEETS).setIncludeFolders(false).setSelectFolderEnabled(false);new google.picker.PickerBuilder().setAppId(APP_ID).setOAuthToken(state.token).setDeveloperKey(API_KEY).addView(view).setTitle("選擇家人分享的寶寶資料庫").setCallback(async data=>{if(data.action===google.picker.Action.PICKED){try{const doc=data.docs[0];await chooseDatabase({id:doc.id,name:doc.name})}catch(error){showError(error)}}}).build().setVisible(true)}catch(error){showError(error)}finally{setBusy(false)}}
   async function inviteFamily(){const email=$("#familyEmail").value.trim();if(!/^\S+@\S+\.\S+$/.test(email))return showToast("請輸入家人的 Gmail");setBusy(true);try{await googleFetch(`https://www.googleapis.com/drive/v3/files/${state.database.id}/permissions?sendNotificationEmail=true`,{method:"POST",body:JSON.stringify({type:"user",role:"writer",emailAddress:email})});$("#familyEmail").value="";showToast("邀請已寄出；請家人登入本網站並選擇加入資料庫") }catch(error){showError(error)}finally{setBusy(false)}}
 
-  async function loadAll(){setConnection("syncing");const [recordData,sleepData]=await Promise.all([getValues("Records!A2:I"),getValues("SleepRecords!A2:H")]);const records=(recordData.values||[]).filter(r=>r[0]).map(r=>({id:String(r[0]),kind:String(r[1]||""),date:String(r[2]||""),time:String(r[3]||""),summary:String(r[4]||""),details:parseJSON(r[5]),readOnly:false}));let active=null;const sleepRecords=[],sleepSessions=[];(sleepData.values||[]).filter(r=>r[0]).forEach(r=>{if(r[4]==="sleeping"&&r[1]){active=String(r[1]);sleepSessions.push({start:new Date(r[1]),end:null,status:"sleeping"})}if(r[4]==="completed"&&r[1]&&r[2]){const end=new Date(r[2]),start=new Date(r[1]);sleepSessions.push({start,end,status:"completed"});sleepRecords.push({id:String(r[0]),kind:"sleep",date:localDate(end),time:clock(start),summary:`睡眠 ${Number(r[3]||0)} 分鐘`,details:{start:String(r[1]),end:String(r[2]),duration:String(r[3]||0)},readOnly:true})}});records.filter(r=>r.kind==="sleep"&&Number(r.details.duration)>0).forEach(r=>{const start=new Date(`${r.date}T${r.time||"00:00"}:00`),end=new Date(start.getTime()+Number(r.details.duration)*60000);if(validDate(start)&&validDate(end))sleepSessions.push({start,end,status:"completed",manual:true})});state.activeStart=active;state.sleepSessions=sleepSessions.filter(s=>validDate(s.start)&&(!s.end||validDate(s.end)));state.records=[...records,...sleepRecords].sort((a,b)=>`${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));render();setConnection("connected")}
+  async function loadAll(){setConnection("syncing");const [recordData,sleepData]=await Promise.all([getValues("Records!A2:I"),getValues("SleepRecords!A2:H")]);const records=(recordData.values||[]).filter(r=>r[0]).map(r=>({id:String(r[0]),kind:String(r[1]||""),date:String(r[2]||""),time:String(r[3]||""),summary:String(r[4]||""),details:parseJSON(r[5]),readOnly:false}));let active=null;const sleepRecords=[],sleepSessions=[];(sleepData.values||[]).filter(r=>r[0]).forEach(r=>{if(r[4]==="sleeping"&&r[1]){active=String(r[1]);sleepSessions.push({start:new Date(r[1]),end:null,status:"sleeping"})}if(r[4]==="completed"&&r[1]&&r[2]){const end=new Date(r[2]),start=new Date(r[1]);sleepSessions.push({start,end,status:"completed"});sleepRecords.push({id:String(r[0]),kind:"sleep",date:localDate(end),time:clock(start),summary:`睡眠 ${formatSleepRecordDuration(r[3])}`,details:{start:String(r[1]),end:String(r[2]),duration:String(r[3]||0)},readOnly:true})}});records.filter(r=>r.kind==="sleep"&&Number(r.details.duration)>0).forEach(r=>{const start=new Date(`${r.date}T${r.time||"00:00"}:00`),end=new Date(start.getTime()+Number(r.details.duration)*60000);if(validDate(start)&&validDate(end))sleepSessions.push({start,end,status:"completed",manual:true})});state.activeStart=active;state.sleepSessions=sleepSessions.filter(s=>validDate(s.start)&&(!s.end||validDate(s.end)));state.records=[...records,...sleepRecords].sort((a,b)=>`${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));render();setConnection("connected")}
   async function getValues(range){return googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${state.database.id}/values/${encodeURIComponent(range)}`)}
   async function appendValues(range,values){return googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${state.database.id}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{method:"POST",body:JSON.stringify({values})})}
   async function updateValues(range,values){return googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${state.database.id}/values/${encodeURIComponent(range)}?valueInputOption=RAW`,{method:"PUT",body:JSON.stringify({values})})}
@@ -48,7 +48,7 @@
   function renderTodaySleep(){const today=localDate(new Date()),bounds=dateBounds(today),sessions=currentSleepSessions(),total=sumOverlap(sessions,bounds.start,bounds.end),longest=Math.max(0,...sessions.map(s=>overlapMinutes(s.start,s.end,bounds.start,bounds.end))),dayStart=atHour(today,5),dayEnd=atHour(today,17),nightEarlyEnd=atHour(today,7),nightLateStart=atHour(today,17),day=sumOverlap(sessions,dayStart,dayEnd),night=sumOverlap(sessions,bounds.start,nightEarlyEnd)+sumOverlap(sessions,nightLateStart,bounds.end);$("#todaySleepTotal").textContent=formatMinutes(total);$("#longestSleep").textContent=formatMinutes(longest);$("#daySleep").textContent=formatMinutes(day);$("#nightSleep").textContent=formatMinutes(night)}
   function renderStatistics(){if(!state.database)return;const today=new Date(),feeding7=dailyFeeding(7,today),feeding30=dailyFeeding(30,today);$("#milkAvg7").textContent=`${round(average(feeding7.map(d=>d.total)))} cc`;$("#milkAvg30").textContent=`${round(average(feeding30.map(d=>d.total)))} cc`;let feedingData;if(state.feedingRange==="custom"&&state.customFeedingRange)feedingData=dailyFeedingRange(state.customFeedingRange.start,state.customFeedingRange.end);else feedingData=dailyFeeding(Number(state.feedingRange)||7,today);renderFeedingChart(feedingData);const sleepData=dailySleep(7,today);$("#sleepAvg").textContent=formatMinutes(average(sleepData.map(d=>d.minutes)));$("#sleepTodayStat").textContent=formatMinutes(sleepData.at(-1)?.minutes||0);renderSingleChart($("#sleepChart"),sleepData.map(d=>({label:shortDate(d.date),value:d.minutes,title:`${d.date}：${formatMinutes(d.minutes)}`})),"sleep");renderSleepDistribution()}
   function renderFeedingChart(data){const root=$("#feedingChart");root.replaceChildren();const max=Math.max(1,...data.map(d=>d.total));data.forEach(d=>{const column=document.createElement("div"),stack=document.createElement("div"),breast=document.createElement("i"),formula=document.createElement("i"),label=document.createElement("small");column.className="chart-column";stack.className="bar-stack";stack.title=`${d.date}：母奶 ${round(d.breast)} cc、配方奶 ${round(d.formula)} cc`;stack.style.height=`${Math.max(d.total?8:2,d.total/max*100)}%`;breast.className="bar-breast";formula.className="bar-formula";breast.style.height=`${d.total?d.breast/d.total*100:0}%`;formula.style.height=`${d.total?d.formula/d.total*100:0}%`;label.textContent=shortDate(d.date);stack.append(formula,breast);column.append(stack,label);root.append(column)});root.classList.toggle("wide",data.length>10)}
-  function renderSingleChart(root,data,tone){root.replaceChildren();const max=Math.max(1,...data.map(d=>d.value));data.forEach(d=>{const column=document.createElement("div"),bar=document.createElement("div"),label=document.createElement("small");column.className="chart-column";bar.className=`single-bar ${tone}`;bar.style.height=`${Math.max(d.value?8:2,d.value/max*100)}%`;bar.title=d.title;label.textContent=d.label;column.append(bar,label);root.append(column)})}
+  function renderSingleChart(root,data,tone){root.replaceChildren();const max=Math.max(1,...data.map(d=>d.value)),showHours=tone==="sleep";data.forEach(d=>{const column=document.createElement("div"),bar=document.createElement("div"),label=document.createElement("small"),value=document.createElement("strong");column.className="chart-column";bar.className=`single-bar ${tone}`;bar.style.height=`${Math.max(d.value?8:2,d.value/max*(showHours?76:100))}%`;bar.title=d.title;label.textContent=d.label;value.className="bar-value";value.textContent=`${round(d.value/60)} hr`;if(showHours)column.append(value);column.append(bar,label);root.append(column)})}
   function renderSleepDistribution(){const root=$("#sleepDistribution");root.replaceChildren();const sessions=currentSleepSessions(),today=new Date();for(let hour=0;hour<24;hour++){let minutes=0;for(let offset=6;offset>=0;offset--){const date=new Date(today.getFullYear(),today.getMonth(),today.getDate()-offset),start=new Date(date.getFullYear(),date.getMonth(),date.getDate(),hour),end=new Date(start.getTime()+3600000);minutes+=sumOverlap(sessions,start,end)}const ratio=Math.min(1,minutes/(7*60)),cell=document.createElement("span");cell.style.setProperty("--sleep-ratio",ratio.toFixed(3));cell.title=`${hour}:00–${hour+1}:00，平均睡眠 ${Math.round(minutes/7)} 分鐘`;root.append(cell)}}
   function dailyFeeding(days,endDate){const end=localDate(endDate),startDate=new Date(endDate.getFullYear(),endDate.getMonth(),endDate.getDate()-days+1);return dailyFeedingRange(localDate(startDate),end)}
   function dailyFeedingRange(start,end){return dateSequence(start,end).map(date=>{const rows=state.records.filter(r=>r.kind==="feeding"&&r.date===date),breast=rows.reduce((n,r)=>n+numeric(r.details.breast),0),formula=rows.reduce((n,r)=>n+numeric(r.details.formula),0);return{date,breast,formula,total:breast+formula}})}
@@ -65,14 +65,95 @@
   function numeric(value){const n=Number(value);return Number.isFinite(n)?n:0}
   function round(value){return Math.round(value*10)/10}
   function formatMinutes(value){const total=Math.round(numeric(value)),hours=Math.floor(total/60),minutes=total%60;if(!hours)return`${minutes} 分`;if(!minutes)return`${hours} 小時`;return`${hours}時 ${minutes}分`}
+  function formatSleepRecordDuration(value){const total=Math.round(numeric(value)),hours=Math.floor(total/60),minutes=total%60;if(!hours)return`${minutes} 分鐘`;if(!minutes)return`${hours} 小時`;return`${hours} 小時 ${minutes} 分鐘`}
   function validDate(value){return value instanceof Date&&!Number.isNaN(value.getTime())}
   function renderSleep(){clearInterval(sleepTimer);const sleeping=Boolean(state.activeStart);$("#sleepStatus").textContent=sleeping?"寶寶睡眠中":"目前醒著";$("#sleepHint").textContent=sleeping?`${clock(new Date(state.activeStart))} 開始入睡`:"點一下開始計時";$("#sleepButton").textContent=sleeping?"醒來":"開始睡覺";$("#sleepButton").classList.toggle("wake",sleeping);const tick=()=>$("#sleepTimer").textContent=sleeping?timer(Date.now()-new Date(state.activeStart).getTime()):"00:00:00";tick();if(sleeping)sleepTimer=setInterval(tick,1000)}
-  function renderRecords(root,records){root.replaceChildren();if(!records.length){const e=document.createElement("div");e.className="empty";e.textContent="目前還沒有紀錄";root.append(e);return}records.forEach(record=>{const meta=kinds[record.kind]||{label:record.kind,icon:"•",tone:"mint"},row=document.createElement("article"),time=document.createElement("time"),icon=document.createElement("span"),main=document.createElement("button"),del=document.createElement("button");row.className="record-row";time.textContent=record.time;icon.className=`record-icon ${meta.tone}`;icon.textContent=meta.icon;main.className="record-main";const title=document.createElement("strong"),summary=document.createElement("p");title.textContent=meta.label;summary.textContent=record.summary;main.append(title,summary);if(!record.readOnly)main.onclick=()=>openRecord(record.kind,record);del.className="delete-record";del.textContent=record.readOnly?"":"×";if(!record.readOnly)del.onclick=()=>{if(confirm(`刪除「${record.summary}」？`))performOrQueue("delete",record)};row.append(time,icon,main,del);root.append(row)})}
+  function renderRecords(root,records){root.replaceChildren();if(!records.length){const e=document.createElement("div");e.className="empty";e.textContent="目前還沒有紀錄";root.append(e);return}records.forEach(record=>{const meta=kinds[record.kind]||{label:record.kind,icon:"•",tone:"mint"},row=document.createElement("article"),time=document.createElement("time"),icon=document.createElement("span"),main=document.createElement("button"),del=document.createElement("button");row.className="record-row";time.textContent=record.time;icon.className=`record-icon ${meta.tone}`;icon.textContent=meta.icon;main.className="record-main";const title=document.createElement("strong"),summary=document.createElement("p");title.textContent=meta.label;summary.textContent=record.kind==="sleep"&&numeric(record.details.duration)>=0?`睡眠 ${formatSleepRecordDuration(record.details.duration)}`:record.summary;main.append(title,summary);if(!record.readOnly)main.onclick=()=>openRecord(record.kind,record);del.className="delete-record";del.textContent=record.readOnly?"":"×";if(!record.readOnly)del.onclick=()=>{if(confirm(`刪除「${record.summary}」？`))performOrQueue("delete",record)};row.append(time,icon,main,del);root.append(row)})}
   function renderHistory(){const list=state.records.filter(r=>state.filter==="all"||state.filter==="feeding"&&["feeding","food"].includes(r.kind)||state.filter==="elimination"&&["pee","poop"].includes(r.kind)||state.filter==="sleep"&&r.kind==="sleep"||state.filter==="health"&&["temperature","jaundice","growth"].includes(r.kind)),groups={};list.forEach(r=>(groups[r.date]??=[]).push(r));const root=$("#historyRecords");root.replaceChildren();Object.entries(groups).forEach(([date,records])=>{const section=document.createElement("section"),h=document.createElement("h3"),box=document.createElement("div");section.className="history-group";h.textContent=`${date}　${records.length} 筆`;box.className="records";renderRecords(box,records);section.append(h,box);root.append(section)});if(!list.length){const e=document.createElement("div");e.className="empty";e.textContent="這個分類目前沒有紀錄";root.append(e)}}
   function openRecord(kind,record=null){state.activeKind=kind;state.editingId=record?.id||null;state.values={...(record?.details||{})};const now=nowFields();$("#recordDate").value=record?.date||now.date;$("#recordTime").value=record?.time||now.time;$("#recordNote").value=state.values.note||"";$("#recordTitle").textContent=`${record?"編輯":"新增"}${kinds[kind].label}紀錄`;renderFields();$("#recordModal").hidden=false}
-  function renderFields(){const root=$("#recordFields");root.replaceChildren();const number=(key,label,unit,placeholder)=>addField(root,key,label,unit,placeholder,"decimal"),choices=(key,label,items)=>{const box=document.createElement("fieldset"),legend=document.createElement("legend"),row=document.createElement("div");box.className="choice-field";legend.textContent=label;row.className="choice-row";items.forEach(item=>{const b=document.createElement("button");b.type="button";b.textContent=item;b.classList.toggle("selected",state.values[key]===item);b.onclick=()=>{state.values[key]=item;renderFields()};row.append(b)});box.append(legend,row);root.append(box)};const kind=state.activeKind;if(kind==="feeding"){number("breast","母奶","cc","0");number("formula","配方奶","cc","0");choices("method","餵食方式",["奶瓶","親餵"])}if(kind==="pee"){choices("color","顏色",["透明","淡黃","黃色","深黃","橘色"]);choices("amount","尿量",["少量","正常","量多","溢出"])}if(kind==="poop"){choices("shape","型態",["水狀","稀便","糊狀","軟便","顆粒"]);choices("color","顏色",["黑色","墨綠","褐色","綠色","黃色"]);choices("amount","份量",["微量","少量","中量","大量"])}if(kind==="sleep")number("duration","睡了多久","分鐘","例如 80");if(kind==="temperature")number("temperature","寶寶體溫","°C","例如 36.8");if(kind==="jaundice")number("jaundice","黃疸數值","mg/dL","請輸入數值");if(kind==="growth"){number("weight","體重","kg","例如 3.8");number("height","身長","cm","例如 52")}if(kind==="food"){addField(root,"foodName","食品名稱","","例如 十倍粥");number("foodAmount","食用份量","g","例如 30")}}
+  function renderFields(){
+    const root=$("#recordFields");
+    root.replaceChildren();
+    const number=(key,label,unit,placeholder)=>addField(root,key,label,unit,placeholder,"decimal");
+    const choices=(key,label,items,layout="")=>{
+      const box=document.createElement("fieldset"),legend=document.createElement("legend"),row=document.createElement("div");
+      box.className="choice-field";
+      legend.textContent=label;
+      row.className="choice-row";
+      if(layout)row.classList.add(layout);
+      if(items.some(item=>typeof item==="object"&&item.icon))row.classList.add("wrap-choices");
+      if(items.some(item=>typeof item==="object"&&item.color))row.classList.add("color-choices");
+      items.forEach(item=>{
+        const option=typeof item==="string"?{label:item}:item;
+        const b=document.createElement("button"),text=document.createElement("span");
+        b.type="button";
+        text.className="choice-label";
+        text.textContent=option.label;
+        if(option.color){
+          const swatch=document.createElement("span");
+          b.classList.add("visual-choice");
+          swatch.className="choice-swatch";
+          swatch.style.background=option.color;
+          b.append(swatch);
+        }else if(option.icon){
+          const icon=document.createElement("span");
+          b.classList.add("visual-choice");
+          icon.className="choice-icon";
+          icon.textContent=option.icon;
+          b.append(icon);
+        }
+        b.append(text);
+        b.classList.toggle("selected",state.values[key]===option.label);
+        b.onclick=()=>{state.values[key]=option.label;renderFields()};
+        row.append(b);
+      });
+      box.append(legend,row);
+      root.append(box);
+    };
+    const kind=state.activeKind;
+    if(kind==="feeding"){
+      number("breast","母奶","cc","0");
+      number("formula","配方奶","cc","0");
+      choices("method","餵食方式",["奶瓶","親餵"]);
+    }
+    if(kind==="pee"){
+      choices("color","顏色",[
+        {label:"透明",color:"linear-gradient(135deg,#fff 0 43%,#d9e7ec 44% 56%,#fff 57%)"},
+        {label:"淡黃",color:"#f8e89a"},
+        {label:"深黃",color:"#d6a321"},
+        {label:"茶色",color:"#94613d"},
+        {label:"結晶尿（偏紅橘）",color:"#d97b59"}
+      ]);
+      choices("amount","尿量",["少量","正常","量多","溢出"]);
+    }
+    if(kind==="poop"){
+      choices("shape","型態",[
+        {label:"水",icon:"💧"},{label:"稀水",icon:"💦"},{label:"軟糊",icon:"≈"},
+        {label:"軟便",icon:"〰"},{label:"顆粒便",icon:"•••"},{label:"偏硬",icon:"◆"},
+        {label:"滲便",icon:"◌"},{label:"血絲便",icon:"╱"},{label:"黏液便",icon:"◉"}
+      ]);
+      choices("color","顏色",[
+        {label:"柏油色",color:"#292522"},{label:"墨綠色",color:"#314a38"},
+        {label:"黃棕色",color:"#a87532"},{label:"黃綠色",color:"#aaa438"},
+        {label:"金黃色",color:"#dfa51f"}
+      ],"equal-choices");
+      choices("amount","份量",["少量","正常","量多","溢出"]);
+    }
+    if(kind==="sleep")number("duration","睡了多久","分鐘","例如 80");
+    if(kind==="temperature")number("temperature","寶寶體溫","°C","例如 36.8");
+    if(kind==="jaundice")number("jaundice","黃疸數值","mg/dL","請輸入數值");
+    if(kind==="growth"){
+      number("weight","體重","kg","例如 3.8");
+      number("height","身長","cm","例如 52");
+      number("headCircumference","頭圍","cm","例如 36");
+    }
+    if(kind==="food"){
+      addField(root,"foodName","食品名稱","","例如 十倍粥");
+      number("foodAmount","食用份量","g","例如 30");
+    }
+  }
   function addField(root,key,label,unit,placeholder,inputMode="text"){const l=document.createElement("label"),wrap=document.createElement("div"),input=document.createElement("input"),b=document.createElement("b"),span=document.createElement("span");l.className="big-field";span.textContent=label;input.placeholder=placeholder;input.inputMode=inputMode;input.value=state.values[key]||"";input.oninput=()=>state.values[key]=input.value;b.textContent=unit;wrap.append(input,b);l.append(span,wrap);root.append(l)}
-  function makeSummary(kind,v){if(kind==="feeding")return[v.breast&&`母奶 ${v.breast} ml`,v.formula&&`配方奶 ${v.formula} ml`].filter(Boolean).join("・")||"已記錄喝奶";if(kind==="pee")return`${v.color||"未選顏色"}・${v.amount||"未選量"}`;if(kind==="poop")return[v.shape,v.color,v.amount].filter(Boolean).join("・")||"已記錄大便";if(kind==="sleep")return`睡眠 ${v.duration||0} 分鐘`;if(kind==="temperature")return`體溫 ${v.temperature||"—"} °C`;if(kind==="jaundice")return`黃疸 ${v.jaundice||"—"} mg/dL`;if(kind==="growth")return[v.weight&&`${v.weight} kg`,v.height&&`${v.height} cm`].filter(Boolean).join("・")||"已記錄成長";return`${v.foodName||"副食品"}${v.foodAmount?` ${v.foodAmount} g`:""}`}
+  function makeSummary(kind,v){if(kind==="feeding")return[v.breast&&`母奶 ${v.breast} ml`,v.formula&&`配方奶 ${v.formula} ml`].filter(Boolean).join("・")||"已記錄喝奶";if(kind==="pee")return`${v.color||"未選顏色"}・${v.amount||"未選量"}`;if(kind==="poop")return[v.shape,v.color,v.amount].filter(Boolean).join("・")||"已記錄大便";if(kind==="sleep")return`睡眠 ${formatSleepRecordDuration(v.duration)}`;if(kind==="temperature")return`體溫 ${v.temperature||"—"} °C`;if(kind==="jaundice")return`黃疸 ${v.jaundice||"—"} mg/dL`;if(kind==="growth")return[v.weight&&`體重 ${v.weight} kg`,v.height&&`身長 ${v.height} cm`,v.headCircumference&&`頭圍 ${v.headCircumference} cm`].filter(Boolean).join("・")||"已記錄成長";return`${v.foodName||"副食品"}${v.foodAmount?` ${v.foodAmount} g`:""}`}
   function setConnection(mode){const bar=document.querySelector(".connection");bar.className=`connection ${mode==="syncing"?"syncing":mode==="connected"?"":"offline"}`;$("#connectionText").textContent=mode==="syncing"?"正在同步資料":mode==="connected"?"Google Sheets 已同步":mode==="expired"?"Google 連線已到期":"目前離線・稍後自動同步";$("#reconnect").hidden=mode!=="expired"}
   function setBusy(value){state.busy=value;$("#busy").hidden=!value}
   function showError(error){setBusy(false);showToast(error?.message||String(error))}
