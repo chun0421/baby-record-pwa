@@ -16,6 +16,7 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
   <script src="./app-v4.js" defer></script>
+  <script src="./preview-dashboard-patch.js" defer></script>
 </head>
 <body>
   <main class="app-shell">
@@ -43,10 +44,14 @@
       <div class="connection"><span id="connectionDot"></span><span id="connectionText">Google Sheets 已同步</span><button id="reconnect" hidden>重新連接</button></div>
 
       <section id="homeScreen" class="screen active">
-        <section class="summary-card"><div class="summary-head"><div><small>今日摘要</small><strong id="todayLabel">—</strong></div><b id="recordCount">0 筆紀錄</b></div><div class="milk-summary"><div><small>母奶</small><strong id="breastTotal">0 cc</strong></div><span>＋</span><div><small>配方奶</small><strong id="formulaTotal">0 cc</strong></div></div><div class="milk-target"><span>今日最低建議奶量</span><strong id="milkTarget">尚無體重紀錄</strong></div></section>
+        <section class="summary-card"><div class="summary-head"><strong id="todayLabel">—</strong><b id="recordCount">0 筆紀錄</b></div></section>
         <section id="sleepCard" class="sleep-card"><span class="sleep-icon">☾</span><div><small id="sleepStatus">目前醒著</small><strong id="sleepTimer">00:00:00</strong><p id="sleepHint">點一下開始計時</p></div><button id="sleepButton">開始睡覺</button></section>
-        <div class="section-title"><div><small>今天</small><h2>睡眠與排泄</h2></div></div>
+        <div class="section-title"><div><small>今天</small><h2>今日摘要</h2></div></div>
         <section class="today-grid">
+          <article><span class="peach">◒</span><small>母奶</small><strong id="breastTotal">0 cc</strong></article>
+          <article><span class="peach">＋</span><small>配方奶</small><strong id="formulaTotal">0 cc</strong></article>
+          <article><span class="mint">↗</span><small>體重</small><strong id="weightValue">尚無紀錄</strong></article>
+          <article><span class="sage">◎</span><small>今日最低建議奶量</small><strong id="milkTarget">尚無體重紀錄</strong></article>
           <article><span class="lavender">☾</span><small>總睡眠</small><strong id="todaySleepTotal">0 小時</strong></article>
           <article><span class="lavender">↔</span><small>最長連續</small><strong id="longestSleep">0 小時</strong></article>
           <article><span class="yellow">☀</span><small>白天 05–17</small><strong id="daySleep">0 小時</strong></article>
