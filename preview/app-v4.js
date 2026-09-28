@@ -71,9 +71,86 @@
   function renderRecords(root,records){root.replaceChildren();if(!records.length){const e=document.createElement("div");e.className="empty";e.textContent="目前還沒有紀錄";root.append(e);return}records.forEach(record=>{const meta=kinds[record.kind]||{label:record.kind,icon:"•",tone:"mint"},row=document.createElement("article"),time=document.createElement("time"),icon=document.createElement("span"),main=document.createElement("button"),del=document.createElement("button");row.className="record-row";time.textContent=record.time;icon.className=`record-icon ${meta.tone}`;icon.textContent=meta.icon;main.className="record-main";const title=document.createElement("strong"),summary=document.createElement("p");title.textContent=meta.label;summary.textContent=record.kind==="sleep"&&numeric(record.details.duration)>=0?`睡眠 ${formatSleepRecordDuration(record.details.duration)}`:record.summary;main.append(title,summary);if(!record.readOnly)main.onclick=()=>openRecord(record.kind,record);del.className="delete-record";del.textContent=record.readOnly?"":"×";if(!record.readOnly)del.onclick=()=>{if(confirm(`刪除「${record.summary}」？`))performOrQueue("delete",record)};row.append(time,icon,main,del);root.append(row)})}
   function renderHistory(){const list=state.records.filter(r=>state.filter==="all"||state.filter==="feeding"&&["feeding","food"].includes(r.kind)||state.filter==="elimination"&&["pee","poop"].includes(r.kind)||state.filter==="sleep"&&r.kind==="sleep"||state.filter==="health"&&["temperature","jaundice","growth"].includes(r.kind)),groups={};list.forEach(r=>(groups[r.date]??=[]).push(r));const root=$("#historyRecords");root.replaceChildren();Object.entries(groups).forEach(([date,records])=>{const section=document.createElement("section"),h=document.createElement("h3"),box=document.createElement("div");section.className="history-group";h.textContent=`${date}　${records.length} 筆`;box.className="records";renderRecords(box,records);section.append(h,box);root.append(section)});if(!list.length){const e=document.createElement("div");e.className="empty";e.textContent="這個分類目前沒有紀錄";root.append(e)}}
   function openRecord(kind,record=null){state.activeKind=kind;state.editingId=record?.id||null;state.values={...(record?.details||{})};const now=nowFields();$("#recordDate").value=record?.date||now.date;$("#recordTime").value=record?.time||now.time;$("#recordNote").value=state.values.note||"";$("#recordTitle").textContent=`${record?"編輯":"新增"}${kinds[kind].label}紀錄`;renderFields();$("#recordModal").hidden=false}
-  function renderFields(){const root=$("#recordFields");root.replaceChildren();const number=(key,label,unit,placeholder)=>addField(root,key,label,unit,placeholder,"decimal"),choices=(key,label,items)=>{const box=document.createElement("fieldset"),legend=document.createElement("legend"),row=document.createElement("div");box.className="choice-field";legend.textContent=label;row.className="choice-row";items.forEach(item=>{const b=document.createElement("button");b.type="button";b.textContent=item;b.classList.toggle("selected",state.values[key]===item);b.onclick=()=>{state.values[key]=item;renderFields()};row.append(b)});box.append(legend,row);root.append(box)};const kind=state.activeKind;if(kind==="feeding"){number("breast","母奶","cc","0");number("formula","配方奶","cc","0");choices("method","餵食方式",["奶瓶","親餵"])}if(kind==="pee"){choices("color","顏色",["透明","淡黃","黃色","深黃","橘色"]);choices("amount","尿量",["少量","正常","量多","溢出"])}if(kind==="poop"){choices("shape","型態",["水狀","稀便","糊狀","軟便","顆粒"]);choices("color","顏色",["黑色","墨綠","褐色","綠色","黃色"]);choices("amount","份量",["微量","少量","中量","大量"])}if(kind==="sleep")number("duration","睡了多久","分鐘","例如 80");if(kind==="temperature")number("temperature","寶寶體溫","°C","例如 36.8");if(kind==="jaundice")number("jaundice","黃疸數值","mg/dL","請輸入數值");if(kind==="growth"){number("weight","體重","kg","例如 3.8");number("height","身長","cm","例如 52")}if(kind==="food"){addField(root,"foodName","食品名稱","","例如 十倍粥");number("foodAmount","食用份量","g","例如 30")}}
+  function renderFields(){
+    const root=$("#recordFields");
+    root.replaceChildren();
+    const number=(key,label,unit,placeholder)=>addField(root,key,label,unit,placeholder,"decimal");
+    const choices=(key,label,items)=>{
+      const box=document.createElement("fieldset"),legend=document.createElement("legend"),row=document.createElement("div");
+      box.className="choice-field";
+      legend.textContent=label;
+      row.className="choice-row";
+      items.forEach(item=>{
+        const option=typeof item==="string"?{label:item}:item;
+        const b=document.createElement("button"),text=document.createElement("span");
+        b.type="button";
+        text.className="choice-label";
+        text.textContent=option.label;
+        if(option.color){
+          const swatch=document.createElement("span");
+          b.classList.add("visual-choice");
+          swatch.className="choice-swatch";
+          swatch.style.background=option.color;
+          b.append(swatch);
+        }else if(option.icon){
+          const icon=document.createElement("span");
+          b.classList.add("visual-choice");
+          icon.className="choice-icon";
+          icon.textContent=option.icon;
+          b.append(icon);
+        }
+        b.append(text);
+        b.classList.toggle("selected",state.values[key]===option.label);
+        b.onclick=()=>{state.values[key]=option.label;renderFields()};
+        row.append(b);
+      });
+      box.append(legend,row);
+      root.append(box);
+    };
+    const kind=state.activeKind;
+    if(kind==="feeding"){
+      number("breast","母奶","cc","0");
+      number("formula","配方奶","cc","0");
+      choices("method","餵食方式",["奶瓶","親餵"]);
+    }
+    if(kind==="pee"){
+      choices("color","顏色",[
+        {label:"透明",color:"linear-gradient(135deg,#fff 0 43%,#d9e7ec 44% 56%,#fff 57%)"},
+        {label:"淡黃",color:"#f8e89a"},
+        {label:"深黃",color:"#d6a321"},
+        {label:"茶色",color:"#94613d"},
+        {label:"結晶尿（偏紅橘）",color:"#d97b59"}
+      ]);
+      choices("amount","尿量",["少量","正常","量多","溢出"]);
+    }
+    if(kind==="poop"){
+      choices("shape","型態",[
+        {label:"水",icon:"💧"},{label:"稀水",icon:"💦"},{label:"軟糊",icon:"≈"},
+        {label:"軟便",icon:"〰"},{label:"顆粒便",icon:"•••"},{label:"偏硬",icon:"◆"},
+        {label:"滲便",icon:"◌"},{label:"血絲便",icon:"╱"},{label:"黏液便",icon:"◉"}
+      ]);
+      choices("color","顏色",[
+        {label:"柏油色",color:"#292522"},{label:"墨綠色",color:"#314a38"},
+        {label:"黃棕色",color:"#a87532"},{label:"黃綠色",color:"#aaa438"},
+        {label:"金黃色",color:"#dfa51f"}
+      ]);
+      choices("amount","份量",["少量","正常","量多","溢出"]);
+    }
+    if(kind==="sleep")number("duration","睡了多久","分鐘","例如 80");
+    if(kind==="temperature")number("temperature","寶寶體溫","°C","例如 36.8");
+    if(kind==="jaundice")number("jaundice","黃疸數值","mg/dL","請輸入數值");
+    if(kind==="growth"){
+      number("weight","體重","kg","例如 3.8");
+      number("height","身長","cm","例如 52");
+      number("headCircumference","頭圍","cm","例如 36");
+    }
+    if(kind==="food"){
+      addField(root,"foodName","食品名稱","","例如 十倍粥");
+      number("foodAmount","食用份量","g","例如 30");
+    }
+  }
   function addField(root,key,label,unit,placeholder,inputMode="text"){const l=document.createElement("label"),wrap=document.createElement("div"),input=document.createElement("input"),b=document.createElement("b"),span=document.createElement("span");l.className="big-field";span.textContent=label;input.placeholder=placeholder;input.inputMode=inputMode;input.value=state.values[key]||"";input.oninput=()=>state.values[key]=input.value;b.textContent=unit;wrap.append(input,b);l.append(span,wrap);root.append(l)}
-  function makeSummary(kind,v){if(kind==="feeding")return[v.breast&&`母奶 ${v.breast} ml`,v.formula&&`配方奶 ${v.formula} ml`].filter(Boolean).join("・")||"已記錄喝奶";if(kind==="pee")return`${v.color||"未選顏色"}・${v.amount||"未選量"}`;if(kind==="poop")return[v.shape,v.color,v.amount].filter(Boolean).join("・")||"已記錄大便";if(kind==="sleep")return`睡眠 ${formatSleepRecordDuration(v.duration)}`;if(kind==="temperature")return`體溫 ${v.temperature||"—"} °C`;if(kind==="jaundice")return`黃疸 ${v.jaundice||"—"} mg/dL`;if(kind==="growth")return[v.weight&&`${v.weight} kg`,v.height&&`${v.height} cm`].filter(Boolean).join("・")||"已記錄成長";return`${v.foodName||"副食品"}${v.foodAmount?` ${v.foodAmount} g`:""}`}
+  function makeSummary(kind,v){if(kind==="feeding")return[v.breast&&`母奶 ${v.breast} ml`,v.formula&&`配方奶 ${v.formula} ml`].filter(Boolean).join("・")||"已記錄喝奶";if(kind==="pee")return`${v.color||"未選顏色"}・${v.amount||"未選量"}`;if(kind==="poop")return[v.shape,v.color,v.amount].filter(Boolean).join("・")||"已記錄大便";if(kind==="sleep")return`睡眠 ${formatSleepRecordDuration(v.duration)}`;if(kind==="temperature")return`體溫 ${v.temperature||"—"} °C`;if(kind==="jaundice")return`黃疸 ${v.jaundice||"—"} mg/dL`;if(kind==="growth")return[v.weight&&`體重 ${v.weight} kg`,v.height&&`身長 ${v.height} cm`,v.headCircumference&&`頭圍 ${v.headCircumference} cm`].filter(Boolean).join("・")||"已記錄成長";return`${v.foodName||"副食品"}${v.foodAmount?` ${v.foodAmount} g`:""}`}
   function setConnection(mode){const bar=document.querySelector(".connection");bar.className=`connection ${mode==="syncing"?"syncing":mode==="connected"?"":"offline"}`;$("#connectionText").textContent=mode==="syncing"?"正在同步資料":mode==="connected"?"Google Sheets 已同步":mode==="expired"?"Google 連線已到期":"目前離線・稍後自動同步";$("#reconnect").hidden=mode!=="expired"}
   function setBusy(value){state.busy=value;$("#busy").hidden=!value}
   function showError(error){setBusy(false);showToast(error?.message||String(error))}
