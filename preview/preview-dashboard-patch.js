@@ -4,6 +4,25 @@
   let queued = false;
   const $ = selector => document.querySelector(selector);
 
+  function amountFrom(node) {
+    const value = Number.parseFloat(node?.textContent || "0");
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  function formatAmount(value) {
+    return Math.round(value * 10) / 10;
+  }
+
+  function syncMilkTotal() {
+    const total = $("#milkTotal");
+    const breast = $("#breastTotal");
+    const formula = $("#formulaTotal");
+    if (!total || !breast || !formula) return;
+
+    const next = `${formatAmount(amountFrom(breast) + amountFrom(formula))} cc`;
+    if (total.textContent !== next) total.textContent = next;
+  }
+
   function syncMilkCards() {
     const target = $("#milkTarget");
     const weight = $("#weightValue");
@@ -72,6 +91,7 @@
 
   function syncPreviewDashboard() {
     queued = false;
+    syncMilkTotal();
     syncMilkCards();
     syncFeedingChartLabels();
   }
