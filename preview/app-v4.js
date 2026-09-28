@@ -80,6 +80,7 @@
       box.className="choice-field";
       legend.textContent=label;
       row.className="choice-row";
+      if(items.some(item=>typeof item==="object"&&item.icon))row.classList.add("wrap-choices");
       items.forEach(item=>{
         const option=typeof item==="string"?{label:item}:item;
         const b=document.createElement("button"),text=document.createElement("span");
