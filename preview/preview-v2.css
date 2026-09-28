@@ -46,6 +46,10 @@
 .choice-row.equal-choices { align-items: stretch; overflow: hidden; }
 .choice-row.equal-choices .visual-choice { flex: 1 1 0; min-width: 0; min-height: 66px; padding: 7px 2px; }
 .choice-row.equal-choices .choice-label { font-size: 9px; }
+.choice-row.color-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; overflow: visible; }
+.choice-row.color-choices.equal-choices { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.choice-row.color-choices .visual-choice { width: 100%; min-width: 0; min-height: 68px; padding: 7px 3px; }
+.choice-row.color-choices .choice-label { white-space: normal; text-align: center; font-size: 9px; line-height: 1.25; }
 .stats-section { margin-bottom: 18px; padding: 15px; border: 1px solid #e8ece5; border-radius: 19px; background: #fff; }
 .stats-heading, .stats-heading > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .stats-heading > div > span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; }
