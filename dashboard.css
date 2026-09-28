@@ -35,6 +35,21 @@
 .quick-sheet h2 { margin: 0; font: 700 21px Georgia, "Noto Serif TC", serif; }
 .quick-sheet header button { border: 0; background: none; color: var(--green); font-size: 11px; font-weight: 800; }
 .quick-action-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding-bottom: 8px; }
+.choice-row .visual-choice { display: grid; grid-template-rows: 30px auto; place-items: center; gap: 5px; min-width: 76px; min-height: 62px; padding: 7px 8px; }
+.choice-swatch { display: block; width: 27px; height: 27px; border: 1px solid #d9ded8; border-radius: 50%; box-shadow: inset 0 0 0 2px #ffffff66; }
+.choice-icon { display: grid; place-items: center; min-width: 31px; height: 28px; color: #7a6859; font-size: 18px; font-weight: 800; line-height: 1; }
+.choice-label { white-space: nowrap; }
+.choice-row .visual-choice.selected .choice-swatch { outline: 2px solid var(--green); outline-offset: 2px; }
+.choice-row .visual-choice.selected .choice-icon { color: var(--green); }
+.choice-row.wrap-choices { flex-wrap: wrap; overflow: visible; }
+.choice-row.wrap-choices .visual-choice { flex: 1 0 calc(33.333% - 7px); min-width: 0; }
+.choice-row.equal-choices { align-items: stretch; overflow: hidden; }
+.choice-row.equal-choices .visual-choice { flex: 1 1 0; min-width: 0; min-height: 66px; padding: 7px 2px; }
+.choice-row.equal-choices .choice-label { font-size: 9px; }
+.choice-row.color-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; overflow: visible; }
+.choice-row.color-choices.equal-choices { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.choice-row.color-choices .visual-choice { width: 100%; min-width: 0; min-height: 68px; padding: 7px 3px; }
+.choice-row.color-choices .choice-label { white-space: normal; text-align: center; font-size: 9px; line-height: 1.25; }
 .stats-section { margin-bottom: 18px; padding: 15px; border: 1px solid #e8ece5; border-radius: 19px; background: #fff; }
 .stats-heading, .stats-heading > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .stats-heading > div > span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; }
@@ -64,6 +79,8 @@
 .chart-column small { height: 20px; padding-top: 5px; color: #8b938d; text-align: center; font-size: 7px; }
 .chart-column .bar-value { flex: 0 0 16px; color: #765f52; text-align: center; font-size: 7px; line-height: 16px; white-space: nowrap; }
 .single-bar.sleep { background: linear-gradient(#9b8bc7, #7465a6); }
+.sleep-bars { height: 150px; }
+.sleep-bars .bar-value { color: #7465a6; }
 .chart-legend { display: flex; justify-content: center; gap: 18px; padding-top: 10px; color: var(--muted); font-size: 8px; }
 .chart-legend i { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; }
 .breast-dot { background: #d67c59; }
