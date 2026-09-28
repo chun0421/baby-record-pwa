@@ -82,6 +82,7 @@
       row.className="choice-row";
       if(layout)row.classList.add(layout);
       if(items.some(item=>typeof item==="object"&&item.icon))row.classList.add("wrap-choices");
+      if(items.some(item=>typeof item==="object"&&item.color))row.classList.add("color-choices");
       items.forEach(item=>{
         const option=typeof item==="string"?{label:item}:item;
         const b=document.createElement("button"),text=document.createElement("span");
