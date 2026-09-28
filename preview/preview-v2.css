@@ -21,6 +21,10 @@
 .today-grid small { color: var(--muted); font-size: 9px; }
 .today-grid strong { font-size: 13px; }
 .today-grid em { color: #7c8b81; font-size: 8px; font-style: normal; }
+.today-grid .milk-total-card { grid-column: 1 / -1; }
+.milk-breakdown { display: flex; align-items: center; gap: 4px; }
+.milk-breakdown b { color: #695f58; font-size: 9px; }
+.milk-breakdown i { color: #c5bcb4; font-style: normal; }
 .quick-sheet {
   width: min(100%, 500px);
   padding: 8px 18px max(30px, env(safe-area-inset-bottom));
