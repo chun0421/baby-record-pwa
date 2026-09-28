@@ -75,11 +75,12 @@
     const root=$("#recordFields");
     root.replaceChildren();
     const number=(key,label,unit,placeholder)=>addField(root,key,label,unit,placeholder,"decimal");
-    const choices=(key,label,items)=>{
+    const choices=(key,label,items,layout="")=>{
       const box=document.createElement("fieldset"),legend=document.createElement("legend"),row=document.createElement("div");
       box.className="choice-field";
       legend.textContent=label;
       row.className="choice-row";
+      if(layout)row.classList.add(layout);
       if(items.some(item=>typeof item==="object"&&item.icon))row.classList.add("wrap-choices");
       items.forEach(item=>{
         const option=typeof item==="string"?{label:item}:item;
@@ -134,7 +135,7 @@
         {label:"柏油色",color:"#292522"},{label:"墨綠色",color:"#314a38"},
         {label:"黃棕色",color:"#a87532"},{label:"黃綠色",color:"#aaa438"},
         {label:"金黃色",color:"#dfa51f"}
-      ]);
+      ],"equal-choices");
       choices("amount","份量",["少量","正常","量多","溢出"]);
     }
     if(kind==="sleep")number("duration","睡了多久","分鐘","例如 80");
