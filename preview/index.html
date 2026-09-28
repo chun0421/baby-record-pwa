@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#2f7d5a">
+  <meta name="description" content="喝奶、排泄、睡眠與健康紀錄，資料保存在自己的 Google 試算表。">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="寶寶紀錄">
+  <title>寶寶生理紀錄</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../app-icon-192.png">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./preview-v2.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js" async defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <main class="app-shell">
+    <section id="welcome" class="welcome">
+      <div class="brand">芽</div>
+      <p class="eyebrow">寶寶生理紀錄</p>
+      <h1>每一個小變化，<br>都值得被好好記住。</h1>
+      <p class="lead">資料只會保存在您授權的 Google 試算表，不需要另外申請帳號。</p>
+      <button id="googleLogin" class="primary">使用 Google 帳號開始</button>
+      <p class="privacy-note">App 只會存取由它建立或由您親自選取的試算表。</p>
+    </section>
+
+    <section id="databaseSetup" class="setup" hidden>
+      <button class="back-link" id="setupSignOut">← 更換 Google 帳號</button>
+      <p class="eyebrow">第一次設定</p>
+      <h1>要從哪裡開始？</h1>
+      <p class="lead" id="accountLabel"></p>
+      <button id="createChoice" class="choice-card"><span>＋</span><div><strong>建立新的寶寶資料庫</strong><small>自動在您的 Google Drive 建立試算表</small></div></button>
+      <button id="joinChoice" class="choice-card"><span>♡</span><div><strong>加入家人的資料庫</strong><small>選擇家人已分享給您的試算表</small></div></button>
+      <div id="existingSection" hidden><h2>或選擇之前使用的資料庫</h2><div id="databaseList"></div></div>
+    </section>
+
+    <section id="app" hidden>
+      <header class="topbar"><div><p class="eyebrow">寶寶生理紀錄</p><h1 id="greeting">您好，寶寶</h1></div><button id="profileButton" class="avatar">寶</button></header>
+      <div class="connection"><span id="connectionDot"></span><span id="connectionText">Google Sheets 已同步</span><button id="reconnect" hidden>重新連接</button></div>
+
+      <section id="homeScreen" class="screen active">
+        <section class="summary-card"><div class="summary-head"><div><small>今日摘要</small><strong id="todayLabel">—</strong></div><b id="recordCount">0 筆紀錄</b></div><div class="milk-summary"><div><small>母奶</small><strong id="breastTotal">0 cc</strong></div><span>＋</span><div><small>配方奶</small><strong id="formulaTotal">0 cc</strong></div></div><div class="milk-target"><span>今日最低建議奶量</span><strong id="milkTarget">尚無體重紀錄</strong></div></section>
+        <section id="sleepCard" class="sleep-card"><span class="sleep-icon">☾</span><div><small id="sleepStatus">目前醒著</small><strong id="sleepTimer">00:00:00</strong><p id="sleepHint">點一下開始計時</p></div><button id="sleepButton">開始睡覺</button></section>
+        <div class="section-title"><div><small>今天</small><h2>睡眠與排泄</h2></div></div>
+        <section class="today-grid">
+          <article><span class="lavender">☾</span><small>總睡眠</small><strong id="todaySleepTotal">0 小時</strong></article>
+          <article><span class="lavender">↔</span><small>最長連續</small><strong id="longestSleep">0 小時</strong></article>
+          <article><span class="yellow">☀</span><small>白天 05–17</small><strong id="daySleep">0 小時</strong></article>
+          <article><span class="blue">☽</span><small>晚上 17–07</small><strong id="nightSleep">0 小時</strong></article>
+          <article><span class="blue">◜</span><small>小便</small><strong id="peeCount">0 次</strong><em id="peeGoal">目標 6 包量多</em></article>
+          <article><span class="gold">♨</span><small>大便</small><strong id="poopCount">0 次</strong></article>
+        </section>
+        <div class="section-title recent"><div><small>今日動態</small><h2>最近紀錄</h2></div><button id="showAll" class="text-button">查看全部</button></div>
+        <div id="recentRecords" class="records"></div>
+      </section>
+
+      <section id="historyScreen" class="screen"><div class="page-heading"><p class="eyebrow">完整紀錄</p><h2>寶寶的每日足跡</h2><small>依照時間排列，回診時也能快速查看。</small></div><div id="filters" class="filters"></div><div id="historyRecords"></div></section>
+
+      <section id="statsScreen" class="screen">
+        <div class="page-heading"><p class="eyebrow">統計數據</p><h2>看見每天的變化</h2><small>數據直接取自目前連接的 Google 試算表。</small></div>
+        <section class="stats-section">
+          <div class="stats-heading"><div><span class="peach">◒</span><div><small>餵奶</small><h3>每日奶量</h3></div></div><div class="period-switch" id="feedingPeriod"><button data-days="7" class="active">7天</button><button data-days="30">30天</button><button data-days="custom">自訂</button></div></div>
+          <div id="feedingCustom" class="custom-range" hidden><label>開始<input id="feedingStart" type="date"></label><label>結束<input id="feedingEnd" type="date"></label><button id="applyFeedingRange">套用</button></div>
+          <div class="metric-row"><div><small>7 天平均</small><strong id="milkAvg7">0 cc</strong></div><div><small>30 天平均</small><strong id="milkAvg30">0 cc</strong></div></div>
+          <div id="feedingChart" class="bar-chart" aria-label="每日餵奶量長條圖"></div>
+          <div class="chart-legend"><span><i class="breast-dot"></i>母奶</span><span><i class="formula-dot"></i>配方奶</span></div>
+        </section>
+        <section class="stats-section">
+          <div class="stats-heading"><div><span class="lavender">☾</span><div><small>睡眠</small><h3>睡眠趨勢</h3></div></div></div>
+          <div class="metric-row"><div><small>7 天平均每日</small><strong id="sleepAvg">0 小時</strong></div><div><small>今日總睡眠</small><strong id="sleepTodayStat">0 小時</strong></div></div>
+          <h4>近 7 天每日總睡眠</h4><div id="sleepChart" class="bar-chart sleep-bars" aria-label="每日總睡眠長條圖"></div>
+          <h4>近 7 天・24 小時睡眠分布</h4><div id="sleepDistribution" class="sleep-distribution"></div><div class="distribution-axis"><span>0</span><span>6</span><span>12</span><span>18</span><span>24時</span></div>
+        </section>
+      </section>
+
+      <section id="settingsScreen" class="screen">
+        <div class="page-heading"><p class="eyebrow">家庭設定</p><h2 id="databaseTitle">寶寶資料庫</h2><small>邀請家人後，大家會共同更新同一份試算表。</small></div>
+        <label class="field"><span>家人的 Gmail</span><input id="familyEmail" type="email" placeholder="name@gmail.com"></label>
+        <button id="inviteFamily" class="primary">邀請家人共同編輯</button>
+        <div class="settings-card"><strong>資料庫管理</strong><button id="openSheet">在 Google Sheets 開啟</button><button id="switchDatabase">切換／加入其他資料庫</button><button id="signOut" class="danger">登出 Google</button></div>
+        <div class="install-guide"><strong>安裝到 iPhone 主畫面</strong><p>用 Safari 開啟網站 → 分享 → 加入主畫面。</p></div>
+      </section>
+
+      <nav class="bottom-nav"><button data-tab="home" class="active"><span>⌂</span>首頁</button><button data-tab="history"><span>≣</span>紀錄</button><button id="quickAdd" class="quick-add" aria-label="新增紀錄">＋</button><button data-tab="stats"><span>▥</span>統計</button><button data-tab="settings"><span>⚙</span>設定</button></nav>
+    </section>
+  </main>
+
+  <div id="createModal" class="modal" hidden><section class="dialog"><button class="dialog-close" data-close="createModal">×</button><p class="eyebrow">建立資料庫</p><h2>寶寶怎麼稱呼？</h2><label class="field"><span>寶寶稱呼</span><input id="newBabyName" placeholder="例如：小芽"></label><button id="createDatabase" class="primary">建立並開始使用</button></section></div>
+  <div id="quickModal" class="modal sheet-modal" hidden><section class="quick-sheet"><div class="handle"></div><header><div><p class="eyebrow">新增紀錄</p><h2>寶寶現在怎麼了？</h2></div><button data-close="quickModal">完成</button></header><div id="quickActionGrid" class="quick-action-grid"></div></section></div>
+  <div id="recordModal" class="modal sheet-modal" hidden><section class="record-sheet"><div class="handle"></div><header><button data-close="recordModal">取消</button><h2 id="recordTitle">新增紀錄</h2><button id="saveRecordTop">儲存</button></header><div class="date-row"><label>日期<input id="recordDate" type="date"></label><label>時間<input id="recordTime" type="time"></label></div><div id="recordFields"></div><label class="field"><span>備註（選填）</span><input id="recordNote" placeholder="例如：今天喝奶速度較慢"></label><button id="saveRecord" class="primary">儲存這筆紀錄</button></section></div>
+  <div id="busy" class="busy" hidden><span></span><p>正在準備您的資料…</p></div>
+  <div id="toast" class="toast"></div>
+</body>
+</html>
