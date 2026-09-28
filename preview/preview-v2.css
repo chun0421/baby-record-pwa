@@ -41,6 +41,8 @@
 .choice-label { white-space: nowrap; }
 .choice-row .visual-choice.selected .choice-swatch { outline: 2px solid var(--green); outline-offset: 2px; }
 .choice-row .visual-choice.selected .choice-icon { color: var(--green); }
+.choice-row.wrap-choices { flex-wrap: wrap; overflow: visible; }
+.choice-row.wrap-choices .visual-choice { flex: 1 0 calc(33.333% - 7px); min-width: 0; }
 .stats-section { margin-bottom: 18px; padding: 15px; border: 1px solid #e8ece5; border-radius: 19px; background: #fff; }
 .stats-heading, .stats-heading > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .stats-heading > div > span { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; }
