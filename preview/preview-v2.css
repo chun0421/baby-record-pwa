@@ -64,6 +64,8 @@
 .chart-column small { height: 20px; padding-top: 5px; color: #8b938d; text-align: center; font-size: 7px; }
 .chart-column .bar-value { flex: 0 0 16px; color: #765f52; text-align: center; font-size: 7px; line-height: 16px; white-space: nowrap; }
 .single-bar.sleep { background: linear-gradient(#9b8bc7, #7465a6); }
+.sleep-bars { height: 150px; }
+.sleep-bars .bar-value { color: #7465a6; }
 .chart-legend { display: flex; justify-content: center; gap: 18px; padding-top: 10px; color: var(--muted); font-size: 8px; }
 .chart-legend i { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; }
 .breast-dot { background: #d67c59; }
