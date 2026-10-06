@@ -12,11 +12,11 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="../app-icon-192.png">
   <link rel="stylesheet" href="./style.css">
-  <link rel="stylesheet" href="./preview-v2.css?v=13">
+  <link rel="stylesheet" href="./preview-v2.css?v=14">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js" async defer></script>
-  <script src="./app-v4.js?v=13" defer></script>
-  <script src="./preview-dashboard-patch.js?v=13" defer></script>
+  <script src="./app-v4.js?v=14" defer></script>
+  <script src="./preview-dashboard-patch.js?v=14" defer></script>
 </head>
 <body>
   <main class="app-shell">
@@ -95,7 +95,7 @@
 
   <div id="createModal" class="modal" hidden><section class="dialog"><button class="dialog-close" data-close="createModal">×</button><p class="eyebrow">建立資料庫</p><h2>寶寶怎麼稱呼？</h2><label class="field"><span>寶寶稱呼</span><input id="newBabyName" placeholder="例如：小芽"></label><button id="createDatabase" class="primary">建立並開始使用</button></section></div>
   <div id="quickModal" class="modal sheet-modal" hidden><section class="quick-sheet"><div class="handle"></div><header><div><p class="eyebrow">新增紀錄</p><h2>寶寶現在怎麼了？</h2></div><button data-close="quickModal">完成</button></header><div id="quickActionGrid" class="quick-action-grid"></div></section></div>
-  <div id="recordModal" class="modal sheet-modal" hidden><section class="record-sheet"><div class="handle"></div><header><button data-close="recordModal">取消</button><h2 id="recordTitle">新增紀錄</h2><button id="saveRecordTop">儲存</button></header><div class="date-row"><label><span id="recordDateLabel">日期</span><input id="recordDate" type="date"></label><label><span id="recordTimeLabel">時間</span><input id="recordTime" type="time"></label></div><div id="recordFields"></div><label id="recordNoteField" class="field"><span>備註（選填）</span><input id="recordNote" placeholder="例如：今天喝奶速度較慢"></label><button id="saveRecord" class="primary">儲存這筆紀錄</button></section></div>
+  <div id="recordModal" class="modal sheet-modal" hidden><section class="record-sheet"><div class="handle"></div><header><button data-close="recordModal">取消</button><h2 id="recordTitle">新增紀錄</h2><button id="saveRecordTop">儲存</button></header><div class="date-row"><label><span id="recordDateLabel">日期</span><input id="recordDate" type="date"></label><label><span id="recordTimeLabel">時間</span><input id="recordTime" type="time"></label></div><div id="recordFields"></div><label id="recordNoteField" class="field"><span>備註（選填）</span><input id="recordNote" placeholder="例如：今天喝奶速度較慢"></label><button id="saveRecord" class="primary">儲存這筆紀錄</button><button id="deleteSleepRecord" class="delete-sleep-record" hidden>刪除此筆睡眠紀錄</button></section></div>
   <div id="busy" class="busy" hidden><span></span><p>正在準備您的資料…</p></div>
   <div id="toast" class="toast"></div>
 </body>
